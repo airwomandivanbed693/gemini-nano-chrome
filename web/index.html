@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gemini Nano Chat</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --panel: #17181d;
+    --border: #2a2c33;
+    --text: #e7e8ea;
+    --muted: #8b8d96;
+    --accent: #6e8bff;
+    --user-bubble: #2a3550;
+    --assistant-bubble: #1d1f26;
+    --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header .title {
+    font-weight: 600;
+    font-size: 15px;
+  }
+  header .subtitle {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  #status {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  #status.ready { color: #5fd48a; border-color: #2c4a37; }
+  #status.busy { color: #e0b75f; border-color: #4a3f2c; }
+  #status.error { color: var(--danger); border-color: #4a2c2c; }
+
+  #clearBtn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+  #clearBtn:hover { color: var(--text); border-color: var(--accent); }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .bubble-row { display: flex; }
+  .bubble-row.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 80%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    line-height: 1.5;
+    font-size: 14.5px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .bubble.user { background: var(--user-bubble); border-bottom-right-radius: 4px; }
+  .bubble.assistant { background: var(--assistant-bubble); border-bottom-left-radius: 4px; }
+  .bubble.system-note {
+    background: none;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  .bubble.error { background: #321f1f; color: var(--danger); }
+
+  #progressWrap {
+    max-width: 760px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 20px;
+  }
+  #progressBar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--panel);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  #progressFill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.2s ease;
+  }
+  #progressLabel {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 6px 0 14px;
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 14px 20px 20px;
+  }
+  #composer {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 10px;
+  }
+  #input {
+    flex: 1;
+    resize: none;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-size: 14.5px;
+    font-family: inherit;
+    max-height: 160px;
+    outline: none;
+    padding: 6px 4px;
+  }
+  #sendBtn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #sendBtn:disabled { background: #3a3d46; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="title">Gemini Nano</div>
+    <div class="subtitle">Running on-device, in this browser. No network calls.</div>
+  </div>
+  <div style="display:flex; align-items:center;">
+    <span id="status">checking...</span>
+    <button id="clearBtn">New chat</button>
+  </div>
+</header>
+
+<div id="progressWrap" style="display:none;">
+  <div id="progressBar"><div id="progressFill"></div></div>
+  <div id="progressLabel"></div>
+</div>
+
+<main id="messages"></main>
+
+<footer>
+  <div id="composer">
+    <textarea id="input" rows="1" placeholder="Message Gemini Nano..." disabled></textarea>
+    <button id="sendBtn" disabled>Send</button>
+  </div>
+</footer>
+
+<script>
+  const statusEl = document.getElementById("status");
+  const messagesEl = document.getElementById("messages");
+  const inputEl = document.getElementById("input");
+  const sendBtn = document.getElementById("sendBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const progressWrap = document.getElementById("progressWrap");
+  const progressFill = document.getElementById("progressFill");
+  const progressLabel = document.getElementById("progressLabel");
+
+  let session = null;
+
+  function setStatus(text, kind) {
+    statusEl.textContent = text;
+    statusEl.className = kind || "";
+  }
+
+  function addBubble(role, text) {
+    const row = document.createElement("div");
+    row.className = "bubble-row" + (role === "user" ? " user" : "");
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + role;
+    bubble.textContent = text;
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return bubble;
+  }
+
+  function addNote(text, isError) {
+    addBubble(isError ? "error" : "system-note", text);
+  }
+
+  async function initSession() {
+    if (typeof LanguageModel === "undefined") {
+      setStatus("API not found", "error");
+      addNote(
+        "LanguageModel isn't available in this browser. Enable chrome://flags/#optimization-guide-on-device-model " +
+        "(Enabled BypassPerfRequirement) and chrome://flags/#prompt-api-for-gemini-nano (Enabled), then relaunch Chrome.",
+        true
+      );
+      return;
+    }
+
+    const availability = await LanguageModel.availability();
+    if (availability === "unavailable") {
+      setStatus("unavailable", "error");
+      addNote("This device doesn't meet Gemini Nano's hardware requirements.", true);
+      return;
+    }
+
+    setStatus("loading model...", "busy");
+    progressWrap.style.display = "block";
+
+    try {
+      session = await LanguageModel.create({
+        monitor(m) {
+          m.addEventListener("downloadprogress", (e) => {
+            const pct = Math.round(e.loaded * 100);
+            progressFill.style.width = pct + "%";
+            progressLabel.textContent = `Downloading model: ${pct}%`;
+          });
+        },
+      });
+      progressWrap.style.display = "none";
+      setStatus("ready", "ready");
+      inputEl.disabled = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+    } catch (err) {
+      setStatus("error", "error");
+      addNote("Could not start a session: " + err.message, true);
+    }
+  }
+
+  async function send() {
+    const text = inputEl.value.trim();
+    if (!text || !session) return;
+
+    addBubble("user", text);
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+    sendBtn.disabled = true;
+    inputEl.disabled = true;
+    setStatus("thinking...", "busy");
+
+    const assistantBubble = addBubble("assistant", "");
+    try {
+      const stream = session.promptStreaming(text);
+      for await (const chunk of stream) {
+        assistantBubble.textContent += chunk;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+    } catch (err) {
+      assistantBubble.classList.add("error");
+      assistantBubble.textContent = "Error: " + err.message;
+    } finally {
+      setStatus("ready", "ready");
+      sendBtn.disabled = false;
+      inputEl.disabled = false;
+      inputEl.focus();
+    }
+  }
+
+  sendBtn.addEventListener("click", send);
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+  inputEl.addEventListener("input", () => {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + "px";
+  });
+
+  clearBtn.addEventListener("click", () => {
+    if (session) session.destroy();
+    messagesEl.innerHTML = "";
+    inputEl.disabled = true;
+    sendBtn.disabled = true;
+    initSession();
+  });
+
+  initSession();
+</script>
+
+</body>
+</html>

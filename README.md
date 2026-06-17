@@ -40,6 +40,18 @@ session.destroy();
 
 The first `create()` call starts the model download. `availability()` only reports state; it doesn't advance the download on its own. See [`examples/basic-prompt.js`](examples/basic-prompt.js) for a version that also reports download progress.
 
+## Chat UI
+
+`web/index.html` is a self-contained chat interface, no build step, no server required for the model itself. It uses `LanguageModel` directly from the page, with one session kept alive across the whole conversation so follow-up questions have real context.
+
+```bash
+cd web && python3 -m http.server 8123
+```
+
+Open `http://localhost:8123` in Chrome (with the flags from above already enabled). It shows the model-download progress bar on first run, then a chat thread: type a message, get a streamed reply, "New chat" resets the session.
+
+A plain `file://` open works in some Chrome versions too, but the Prompt API expects a secure context, so serving it over `http://localhost` is the reliable option.
+
 ## Structured output
 
 Constrain the response to a JSON Schema with `responseConstraint`, and you get back parseable JSON instead of free-form prose:
