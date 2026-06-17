@@ -1,13 +1,20 @@
 // Owns the single Chrome tab that all chat completion requests run against,
 // and the JS expressions that drive LanguageModel from there.
 
-const { newTarget, evaluate, evaluateStreaming } = require("../tools/cdp-client");
+const { newTarget, listTargets, evaluate, evaluateStreaming } = require("../tools/cdp-client");
 const { ensureChromeReady } = require("../tools/chrome");
 
 let pageTargetId = null;
 
+// The cached tab can disappear out from under us: closed by hand, by another
+// script driving the same Chrome instance, or by Chrome itself. Every call
+// verifies it's still a live target before reusing it.
 async function getPageTarget(log) {
   await ensureChromeReady({ log });
+  if (pageTargetId) {
+    const targets = await listTargets();
+    if (!targets.some((t) => t.id === pageTargetId)) pageTargetId = null;
+  }
   if (!pageTargetId) {
     const target = await newTarget("https://example.com");
     pageTargetId = target.id;
