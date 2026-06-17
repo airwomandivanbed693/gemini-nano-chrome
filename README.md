@@ -4,6 +4,23 @@ Chrome ships a small local language model, Gemini Nano, built into the browser. 
 
 This repo covers how to turn it on and what the API can do. It also includes scripts that automate setup and verification end to end.
 
+## Run it
+
+```bash
+git clone https://github.com/Ar9av/gemini-nano-chrome.git
+cd gemini-nano-chrome
+npm start
+```
+
+One command: launches Chrome with the right flags set (no manual `chrome://flags` clicking), starts the OpenAI-compatible API server, serves the chat UI, and opens it in a new tab. First run downloads the ~4 GB model, so give it a few minutes; `npm start` again afterward reuses the same Chrome instance and is instant.
+
+```
+Chat UI:    http://localhost:8123
+API server: http://localhost:8788/v1/chat/completions
+```
+
+Everything below explains what that command is doing and how to use each piece directly, in case you want more control than one script gives you.
+
 ## Requirements
 
 | | |
@@ -42,7 +59,7 @@ The first `create()` call starts the model download. `availability()` only repor
 
 ## Chat UI
 
-`web/index.html` is a self-contained chat interface, no build step, no server required for the model itself. It uses `LanguageModel` directly from the page, with one session kept alive across the whole conversation so follow-up questions have real context.
+`web/index.html` is a self-contained chat interface, no build step, no server required for the model itself. It uses `LanguageModel` directly from the page, with one session kept alive across the whole conversation so follow-up questions have real context. `npm start` serves this automatically; to serve it on its own instead:
 
 ```bash
 cd web && python3 -m http.server 8123
@@ -97,7 +114,7 @@ node server/index.js          # listens on http://localhost:8788
 PORT=8080 node server/index.js
 ```
 
-It launches Chrome itself on the first request if nothing is running yet, the same way `tools/enable-flags.js` does.
+It launches Chrome itself on the first request if nothing is running yet, the same way `tools/enable-flags.js` does. `npm start` runs this alongside the chat UI in one process; use `node server/index.js` directly when you only need the API, not the browser-based chat.
 
 | Endpoint | Behavior |
 |---|---|
@@ -166,7 +183,7 @@ PROFILE_DIR=/tmp/my-profile node server/index.js
 
 ## Automating setup and testing
 
-Clicking through `chrome://flags` by hand works fine once, but it gets old if you're testing repeatedly or want a reproducible setup. `tools/` has two Node scripts that drive a real Chrome instance over the Chrome DevTools Protocol (CDP) instead:
+Clicking through `chrome://flags` by hand works fine once, but it gets old if you're testing repeatedly or want a reproducible setup. `tools/` has two Node scripts that drive a real Chrome instance over the Chrome DevTools Protocol (CDP) instead. (`npm start` and `server/index.js` use the same underlying module, `tools/chrome.js`, to launch Chrome automatically.)
 
 ```bash
 node tools/enable-flags.js   # launches Chrome in a throwaway profile with both flags set

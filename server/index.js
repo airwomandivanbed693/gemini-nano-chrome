@@ -188,7 +188,27 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Gemini Nano OpenAI-compatible server listening on http://localhost:${PORT}`);
-  console.log("Endpoints: GET /health, GET /v1/models, POST /v1/chat/completions");
-});
+function start(port = PORT) {
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, () => {
+      server.removeListener("error", reject);
+      console.log(`Gemini Nano OpenAI-compatible server listening on http://localhost:${port}`);
+      console.log("Endpoints: GET /health, GET /v1/models, POST /v1/chat/completions");
+      resolve(server);
+    });
+  });
+}
+
+if (require.main === module) {
+  start().catch((err) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(`Port ${PORT} is already in use. Set PORT to something else or stop whatever's using it.`);
+    } else {
+      console.error(err);
+    }
+    process.exit(1);
+  });
+}
+
+module.exports = { server, start };
