@@ -1,6 +1,6 @@
 # Gemini Nano in Chrome
 
-Chrome ships a small local language model, Gemini Nano, built into the browser. It's exposed through a JavaScript API called the Prompt API (`LanguageModel`). No API key, no server, no network calls once the model is downloaded. Everything runs on the user's machine.
+Chrome ships a small local language model, Gemini Nano, built into the browser. It's exposed through a JavaScript API called the Prompt API (`LanguageModel`). No API key, no server, no external network calls once the model is downloaded. Everything runs on the user's machine.
 
 This repo covers how to turn it on and what the API can do. It also includes scripts that automate setup and verification end to end.
 
