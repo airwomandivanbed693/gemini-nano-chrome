@@ -85,11 +85,22 @@
     border-radius: 14px;
     line-height: 1.5;
     font-size: 14.5px;
-    white-space: pre-wrap;
     word-wrap: break-word;
   }
+  .bubble.user, .bubble.error, .bubble.system-note { white-space: pre-wrap; }
   .bubble.user { background: var(--user-bubble); border-bottom-right-radius: 4px; }
   .bubble.assistant { background: var(--assistant-bubble); border-bottom-left-radius: 4px; }
+  .bubble.assistant p { margin: 0 0 10px; }
+  .bubble.assistant p:last-child { margin-bottom: 0; }
+  .bubble.assistant ul { margin: 0 0 10px; padding-left: 20px; }
+  .bubble.assistant ul:last-child { margin-bottom: 0; }
+  .bubble.assistant code {
+    background: #0e0f12;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 13px;
+  }
   .bubble.system-note {
     background: none;
     color: var(--muted);
@@ -209,6 +220,35 @@
     statusEl.className = kind || "";
   }
 
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function renderInline(text) {
+    text = text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    text = text.replace(/(^|[^*])\*(?!\*)(.+?)\*(?!\*)/g, "$1<em>$2</em>");
+    text = text.replace(/`(.+?)`/g, "<code>$1</code>");
+    return text;
+  }
+
+  // Gemini Nano replies in Markdown (bold, bullet lists, paragraphs). This
+  // renders just enough of it to avoid showing raw "**" and "*" to the user.
+  function renderMarkdown(raw) {
+    const blocks = escapeHtml(raw).split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+    return blocks
+      .map((block) => {
+        const lines = block.split("\n").filter((l) => l.trim().length);
+        if (lines.length && lines.every((l) => /^[*-]\s+/.test(l.trim()))) {
+          const items = lines
+            .map((l) => "<li>" + renderInline(l.trim().replace(/^[*-]\s+/, "")) + "</li>")
+            .join("");
+          return "<ul>" + items + "</ul>";
+        }
+        return "<p>" + renderInline(block).replace(/\n/g, "<br>") + "</p>";
+      })
+      .join("");
+  }
+
   function addBubble(role, text) {
     const row = document.createElement("div");
     row.className = "bubble-row" + (role === "user" ? " user" : "");
@@ -279,10 +319,12 @@
     setStatus("thinking...", "busy");
 
     const assistantBubble = addBubble("assistant", "");
+    let raw = "";
     try {
       const stream = session.promptStreaming(text);
       for await (const chunk of stream) {
-        assistantBubble.textContent += chunk;
+        raw += chunk;
+        assistantBubble.innerHTML = renderMarkdown(raw);
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
     } catch (err) {
