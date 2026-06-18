@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Gemini Nano Chat",
+  "version": "1.0.0",
+  "description": "Chat with Gemini Nano, Chrome's built-in on-device AI model. No API key, no server, no network calls.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

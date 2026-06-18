@@ -69,6 +69,8 @@ Open `http://localhost:8123` in Chrome (with the flags from above already enable
 
 A plain `file://` open works in some Chrome versions too, but the Prompt API expects a secure context, so serving it over `http://localhost` is the reliable option.
 
+Want the same chat as an installable extension instead, no server, no `npm start` at all? See [`extension/`](extension/).
+
 ## Structured output
 
 Constrain the response to a JSON Schema with `responseConstraint`, and you get back parseable JSON instead of free-form prose:

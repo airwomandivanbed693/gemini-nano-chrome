@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Gemini Nano Chat</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --panel: #17181d;
+    --border: #2a2c33;
+    --text: #e7e8ea;
+    --muted: #8b8d96;
+    --accent: #6e8bff;
+    --user-bubble: #2a3550;
+    --assistant-bubble: #1d1f26;
+    --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 380px;
+    height: 560px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+  }
+  body { display: flex; flex-direction: column; }
+  header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  header .title { font-weight: 600; font-size: 14px; }
+  #status {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  #status.ready { color: #5fd48a; border-color: #2c4a37; }
+  #status.busy { color: #e0b75f; border-color: #4a3f2c; }
+  #status.error { color: var(--danger); border-color: #4a2c2c; }
+  #clearBtn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 7px;
+    padding: 4px 9px;
+    font-size: 11px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  #clearBtn:hover { color: var(--text); border-color: var(--accent); }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .bubble-row { display: flex; }
+  .bubble-row.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 85%;
+    padding: 8px 11px;
+    border-radius: 12px;
+    line-height: 1.45;
+    font-size: 13px;
+    word-wrap: break-word;
+  }
+  .bubble.user, .bubble.error, .bubble.system-note { white-space: pre-wrap; }
+  .bubble.user { background: var(--user-bubble); border-bottom-right-radius: 3px; }
+  .bubble.assistant { background: var(--assistant-bubble); border-bottom-left-radius: 3px; }
+  .bubble.assistant p { margin: 0 0 8px; }
+  .bubble.assistant p:last-child { margin-bottom: 0; }
+  .bubble.assistant ul { margin: 0 0 8px; padding-left: 18px; }
+  .bubble.assistant ul:last-child { margin-bottom: 0; }
+  .bubble.assistant code {
+    background: #0e0f12;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 4px;
+    font-size: 12px;
+  }
+  .bubble.system-note {
+    background: none;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  .bubble.error { background: #321f1f; color: var(--danger); }
+
+  #progressWrap { padding: 0 14px; flex-shrink: 0; }
+  #progressBar {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--panel);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  #progressFill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s ease; }
+  #progressLabel { font-size: 11px; color: var(--muted); margin: 5px 0 10px; }
+
+  footer { border-top: 1px solid var(--border); padding: 10px 12px; flex-shrink: 0; }
+  #composer {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px 8px;
+  }
+  #input {
+    flex: 1;
+    resize: none;
+    border: none;
+    background: none;
+    color: var(--text);
+    font-size: 13px;
+    font-family: inherit;
+    max-height: 100px;
+    outline: none;
+    padding: 5px 3px;
+  }
+  #sendBtn {
+    background: var(--accent);
+    border: none;
+    color: white;
+    border-radius: 9px;
+    padding: 7px 13px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #sendBtn:disabled { background: #3a3d46; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">Gemini Nano</div>
+  <div style="display:flex; align-items:center;">
+    <span id="status">checking...</span>
+    <button id="clearBtn">New chat</button>
+  </div>
+</header>
+
+<div id="progressWrap" style="display:none;">
+  <div id="progressBar"><div id="progressFill"></div></div>
+  <div id="progressLabel"></div>
+</div>
+
+<main id="messages"></main>
+
+<footer>
+  <div id="composer">
+    <textarea id="input" rows="1" placeholder="Message Gemini Nano..." disabled></textarea>
+    <button id="sendBtn" disabled>Send</button>
+  </div>
+</footer>
+
+<script src="popup.js"></script>
+</body>
+</html>
